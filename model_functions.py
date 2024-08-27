@@ -26,7 +26,6 @@ def get_inputs_outputs(Sequences):
 class SocialGNN(object):
     def __init__(self, dataset, config, sample_graph_dicts_list):
         self.graph = tf.Graph()
-
         self.dataset = dataset
         self.config = config  # define model parameters
 
@@ -55,7 +54,8 @@ class SocialGNN(object):
 
     def _build_graph(self):
         print("\n.............BUILDING GRAPH..............")
-        #########   Define Layers/Blocks    #########
+
+        # Define Layers/Blocks
         Gspatial_edges = gn.blocks.EdgeBlock(edge_model_fn=lambda: snt.Linear(self.config.E_SPATIAL_SIZE),
                                              use_globals=False,
                                              use_edges=False)  # no edge attributes used #n_edges(unequal) x timesteps(101/61) x n_videos(20)
@@ -64,15 +64,12 @@ class SocialGNN(object):
         Gtemporal_nodes = snt.LSTM(hidden_size=self.config.V_TEMPORAL_SIZE)
         classifier_nodes = snt.Linear(self.config.V_OUTPUT_SIZE)
 
-        #########   Create graph    #########
+        # Spatial: Nodes & Edges
+        G_E_output = Gspatial_edges(self.Gin_placeholder)
+        G_V_output = Gspatial_nodes(G_E_output)
 
-        #########   Spatial: Nodes & Edges    #########
-        G_E = Gspatial_edges(self.Gin_placeholder)
-        G_V = Gspatial_nodes(G_E)
-        # print("\nG_E",G_E,"\nG_V",G_V)
-
-        #########   Temporal Nodes    #########
-        x_reshaped = tf.reshape(G_V.nodes, [-1, self.config.NUM_NODES, self.config.V_SPATIAL_SIZE])
+        # Temporal Nodes (LSTM)
+        x_reshaped = tf.reshape(G_V_output.nodes, [-1, self.config.NUM_NODES, self.config.V_SPATIAL_SIZE])
         x_reshaped_sliced = x_reshaped[:, :self.config.NUM_AGENTS, :]  # only agents
         x_reshaped_sliced_reshaped = tf.reshape(x_reshaped_sliced, [-1,
                                                                     self.config.NUM_AGENTS * self.config.V_SPATIAL_SIZE])  # concat features
@@ -82,10 +79,11 @@ class SocialGNN(object):
         # print("\nV_tensor",V_tensor)
 
         # RNN
-        output_sequence, final_state = tf.nn.dynamic_rnn(Gtemporal_nodes, V_tensor, self.videos_timesteps_placeholder,
+        self.output_sequence, self.final_state = tf.nn.dynamic_rnn(Gtemporal_nodes, V_tensor, self.videos_timesteps_placeholder,
                                                          Gtemporal_nodes.zero_state(self.config.BATCH_SIZE, tf.float32))
+
         # Classify
-        output_label_V = classifier_nodes(final_state[0])
+        output_label_V = classifier_nodes(self.final_state[0])
         # print("LSTM out", output_sequence,"\nOutput V",output_label_V)
 
         #########   Training Loss + Optimizer    #########
@@ -102,7 +100,6 @@ class SocialGNN(object):
         self.output_label_V = output_label_V
         # print("\nTrainable paramters: ", np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()]))
         self.trainable_variables = tf.trainable_variables()
-        self.final_state = final_state[0]  # final (non-zero) layer of dynamicRNN
 
     def train(self, N_EPOCHS, train_data_idx, mapping, plot=False):
         print("\n.............TRAINING..............")
@@ -213,10 +210,12 @@ class SocialGNN(object):
 
         return np.mean(np.equal(V0_pred, V0_true))
 
-    def get_activations(self):
-        print("\n.............TESTING..............")
-
-        RNN_activations = []
+    def get_layer_representations(self):
+        """Extracts the representations from specific layers."""
+        activations = {
+            'RNN_output': [],
+            'final_state': []
+        }
 
         total_data_len = len(self.dataset)
         batches = [np.arange(k, min(k + self.config.BATCH_SIZE, total_data_len)) for k in
@@ -237,10 +236,14 @@ class SocialGNN(object):
             feed_dict[self.videos_timesteps_placeholder] = input_videos_timesteps
 
             # test
-            test_values = self.sess.run({"RNN_activations": self.final_state}, feed_dict)
-            RNN_activations.extend(test_values["RNN_activations"])
+            layer_outputs = self.sess.run({
+                            'RNN_output': self.output_sequence,
+                            'final_state': self.final_state[0]
+                        }, feed_dict=feed_dict)
+            for key in layer_outputs:
+                activations[key].append(layer_outputs[key])
 
-        return RNN_activations
+        return activations
 
     def cross_validate(self, n_splits, N_EPOCHS, X_train, y_train, mapping):
         skf = StratifiedKFold(n_splits)
