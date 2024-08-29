@@ -7,7 +7,8 @@ The figures are stored in the `result_figures/behavioral_encoding` directory and
 hidden layer) of different models tested. 
 
 Ridge regression is performed using RidgeCV, which automatically selects the best regularization strength 
-(alpha) from 10^(-5), 10^-4， 10^-3, 10^-2, 10^-1, 10. RidgeCV used a 4-Fold cross-validation to creat 4 split of training and testing sets
+(alpha) from seven values sampled from a logspace of 10e-2, 10e5. Performance was measured as the Pearson correlation between the predicted behavioral or neural response and the true
+response
 ### 1. SocialGNN Linear & Ridge Regression
 <div style="display: flex; justify-content: space-between;">
     <img src="./result_figures/behavioral_encoding/linear-SocialGNN-final_state.png" alt="Linear-SocialGNN Final State" style="width: 49%;">
