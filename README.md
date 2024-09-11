@@ -19,21 +19,6 @@ respons.
 Garcia, McMahon, et al. "Modeling dynamic social vision highlights gaps between deep learning and humans." (2024).
 
 
-### Ridge regression behavioral encoding 
-
-model tested: 
-* LSTM, final_state
-* SocialGNN, final_state
-* LSTM_Relation, final_state
-
-![ridge regression behavioral encoding](result_figures/behavioral_encoding/ridge_beh_encoding.png)
-
-model tested: 
-* LSTM, final_state
-* SocialGNN, RNN_output
-* LSTM_Relation, final_state
-
-![ridge regression behavioral encoding](result_figures/behavioral_encoding/RNN_ridge_beh_encoding.png)
 
 ### Linear regression behavioral encoding results
 
@@ -44,9 +29,11 @@ model tested:
 
 ![linear regression behavioral encoding](result_figures/behavioral_encoding/linear_beh_encoding.png)
 
+
+### Ridge regression neural encoding results
 model tested: 
 * LSTM, final_state
-* SocialGNN, RNN_output
+* SocialGNN, final_state
 * LSTM_Relation, final_state
 
-![linear regression behavioral encoding](result_figures/behavioral_encoding/RNN_linear_beh_encoding.png)
+![ridge regression neural encoding](result_figures/neural_encoding/ROI.png)

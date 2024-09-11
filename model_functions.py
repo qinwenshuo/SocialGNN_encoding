@@ -213,7 +213,7 @@ class SocialGNN(object):
     def get_layer_representations(self):
         """Extracts the representations from specific layers."""
         activations = {
-            'RNN_output': [],
+            # 'RNN_output': [],
             'final_state': []
         }
 
@@ -237,7 +237,7 @@ class SocialGNN(object):
 
             # test
             layer_outputs = self.sess.run({
-                            'RNN_output': self.output_sequence,
+                            # 'RNN_output': self.output_sequence,
                             'final_state': self.final_state[0]
                         }, feed_dict=feed_dict)
             for key in layer_outputs:
